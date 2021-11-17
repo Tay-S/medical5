@@ -11,7 +11,6 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
-import java.io.InvalidObjectException;
 import java.sql.Date;
 
 @Controller
@@ -22,24 +21,26 @@ public class PatientController {
     private PatientService ps;
 
     @Autowired
-    private VilleService vs;
+    private VilleService vservice;
 
     // http://localhost:8080/patient
     @GetMapping(value = "")
     public String list( Model model ){
         model.addAttribute("patients" , ps.findAll() );
-        return "list_patient";
+        return "patient/list_patient";
     }
 
     // http://localhost:8080/patient/add
     @GetMapping(value = "/add")
     public String add( Model model ){
-        model.addAttribute("villes" , vs.findAll() );
-        return "add_edit";
+        model.addAttribute("villes" , vservice.findAll() );
+        model.addAttribute("patient" , new PatientEntity() );
+        return "patient/add_edit";
     }
 
     @PostMapping(value = "/add")
     public String addPost( HttpServletRequest request){
+        // Récupération des paramètres envoyés en POST
         String nom = request.getParameter("nom");
         String prenom = request.getParameter("prenom");
         String naissance = request.getParameter("naissance");
@@ -48,10 +49,12 @@ public class PatientController {
         String telephone = request.getParameter("telephone");
         int ville = Integer.parseInt(request.getParameter("ville"));
 
+        // Préparation de l'entité à sauvegarder
         VilleEntity v = new VilleEntity();
         v.setId(ville);
         PatientEntity p = new PatientEntity( 0 , nom , prenom , Date.valueOf( naissance ) , email , telephone , adresse , v );
 
+        // Enregistrement en utilisant la couche service qui gère déjà nos contraintes
         try{
             ps.addPatient( p );
         }catch( Exception e ){
@@ -62,23 +65,39 @@ public class PatientController {
 
     @GetMapping(value = "/edit/{id}")
     public String edit( Model model , @PathVariable int id ){
-        model.addAttribute("villes" , vs.findAll() );
-        model.addAttribute("patient" , ps.findPatient(id) );
-        return "add_edit";
+        model.addAttribute("villes" , vservice.findAll() );
+        model.addAttribute("patient" , ps.findPatient( id ) );
+        return "patient/add_edit";
     }
 
     @PostMapping(value = "/edit/{id}")
-    public String editPost( PatientEntity p, HttpServletRequest request, @PathVariable int id) throws InvalidObjectException {
-        p.setNom(request.getParameter("nom"));
-        p.setPrenom(request.getParameter("prenom"));
-        p.setEmail(request.getParameter("email"));
-        p.setAdresse(request.getParameter("adresse"));
-        p.setTelephone(request.getParameter("telephone"));
-        p.setDateNaissance(Date.valueOf(request.getParameter("naissance")));
+    public String editPost( HttpServletRequest request , @PathVariable int id ){
+        // Récupération des paramètres envoyés en POST
+        String nom = request.getParameter("nom");
+        String prenom = request.getParameter("prenom");
+        String naissance = request.getParameter("naissance");
+        String adresse = request.getParameter("adresse");
+        String email = request.getParameter("email");
+        String telephone = request.getParameter("telephone");
+        int ville = Integer.parseInt(request.getParameter("ville"));
 
-        VilleEntity v = vs.findVille(Integer.parseInt(request.getParameter("ville")));
-        p.setVille(v);
-        ps.editPatient(id, p);
+        // Préparation de l'entité à sauvegarder
+        VilleEntity v = new VilleEntity();
+        v.setId(ville);
+        PatientEntity p = new PatientEntity( 0 , nom , prenom , Date.valueOf( naissance ) , email , telephone , adresse , v );
+
+        // Enregistrement en utilisant la couche service qui gère déjà nos contraintes
+        try{
+            ps.editPatient( id , p );
+        }catch( Exception e ){
+            System.out.println( e.getMessage() );
+        }
+        return "redirect:/patient";
+    }
+
+    @GetMapping(value = "/delete/{id}")
+    public String delete( @PathVariable int id ){
+        ps.delete(id);
         return "redirect:/patient";
     }
 
