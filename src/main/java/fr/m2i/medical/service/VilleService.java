@@ -4,9 +4,12 @@ import fr.m2i.medical.entities.PatientEntity;
 import fr.m2i.medical.entities.VilleEntity;
 import fr.m2i.medical.repositories.PatientRepository;
 import fr.m2i.medical.repositories.VilleRepository;
+import org.hibernate.exception.ConstraintViolationException;
 import org.springframework.stereotype.Service;
 
 import java.io.InvalidObjectException;
+import java.sql.SQLException;
+import java.util.NoSuchElementException;
 
 @Service
 public class VilleService {
@@ -46,15 +49,19 @@ public class VilleService {
         vr.deleteById(id);
     }
 
-    public void editVille( int id , VilleEntity v) throws InvalidObjectException {
+    public void editVille( int id , VilleEntity v) throws InvalidObjectException , NoSuchElementException {
         checkVille(v);
-        VilleEntity vExistante = vr.findById(id).get();
+        try{
+            VilleEntity vExistante = vr.findById(id).get();
 
-        vExistante.setCodePostal( v.getCodePostal() );
-        vExistante.setNom( v.getNom() );
-        vExistante.setPays( v.getPays() );
+            vExistante.setCodePostal( v.getCodePostal() );
+            vExistante.setNom( v.getNom() );
+            vExistante.setPays( v.getPays() );
+            vr.save( vExistante );
 
-        vr.save( vExistante );
+        }catch ( NoSuchElementException e ){
+            throw e;
+        }
 
     }
 }
