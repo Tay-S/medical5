@@ -22,6 +22,12 @@ public class VilleEntity {
         this.pays = pays;
     }
 
+    public VilleEntity(String nom, String codePostal, String pays) {
+        this.nom = nom;
+        this.codePostal = codePostal;
+        this.pays = pays;
+    }
+
     @Id
     @Column(name = "id", nullable = false)
     @GeneratedValue(strategy = GenerationType.IDENTITY)
